@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+   <property>
+     <name>mapreduce.framework.name</name>
+     <value>yarn</value>
+     <!--<value>yarn-tez</value>-->
+   </property>
+   <property>
+      <name>mapreduce.application.classpath</name>
+      <value>/opt/hadoop-3.1.1/share/hadoop/mapreduce/*,/opt/hadoop-3.1.1/share/hadoop/mapreduce/lib/*,/opt/hadoop-3.1.1/share/hadoop/common/*,/opt/hadoop-3.1.1/share/hadoop/common/lib/*,/opt/hadoop-3.1.1/share/hadoop/yarn/*,/opt/hadoop-3.1.1/share/hadoop/yarn/lib/*,/opt/hadoop-3.1.1/share/hadoop/hdfs/*,/opt/hadoop-3.1.1/share/hadoop/hdfs/lib/*</value>
+   </property>
+
+   <property>
+      <name>yarn.app.mapreduce.am.resource.mb</name>
+      <value>300</value>
+   </property>
+   <property>
+      <name>yarn.app.mapreduce.am.command-opts</name>
+      <value>-Xmx224m</value>
+   </property>
+
+   <property>
+      <name>mapreduce.reduce.memory.mb</name>
+      <value>300</value>
+   </property>
+   <property>
+      <name>mapreduce.reduce.java.opts</name>
+      <value>-Xmx224m</value>
+   </property>
+   <property>
+      <name>mapreduce.map.memory.mb</name>
+      <value>300</value>
+   </property>
+   <property>
+     <name>mapreduce.job.running.map.limit</name>
+     <value>1</value>
+   </property>
+</configuration>

@@ -1,0 +1,6 @@
+#!/bin/bash
+stop-history-server.sh
+stop-master.sh
+
+start-master.sh
+start-history-server.sh

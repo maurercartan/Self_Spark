@@ -1,0 +1,55 @@
+(1) 安裝套件
+cd /opt
+sudo apt-get update
+sudo apt-get upgrade
+sudo apt-get dist-upgrade
+sudo apt-get install vim
+sudo wget http://ftp.twaren.net/Unix/Web/apache/hadoop/common/hadoop-3.1.1/hadoop-3.1.1.tar.gz
+sudo wget https://archive.apache.org/dist/hive/hive-3.1.0/apache-hive-3.1.0-bin.tar.gz
+sudo wget http://ftp.twaren.net/Unix/Web/apache/pig/pig-0.17.0/pig-0.17.0.tar.gz
+sudo wget https://archive.apache.org/dist/spark/spark-2.3.1/spark-2.3.1-bin-hadoop2.7.tgz
+sudo tar xvfz hadoop-3.1.1.tar.gz -C /opt
+sudo tar xvfz apache-hive-3.1.0-bin.tar.gz -C /opt
+sudo tar xvfz pig-0.17.0.tar.gz -C /opt
+sudo tar xvfz spark-2.3.1-bin-hadoop2.7.tgz -C /opt
+sudo rm *.tar.gz
+sudo rm *.tgz
+sudo mkdir /opt/dataset
+sudo mkdir /opt/bin
+
+(2) 修改環境變數
+vim ~/.bashrc
+sudo vim ~/.profile
+source ~/.profile
+
+
+(3) 修改設定檔
+vim /opt/hadoop-3.1.1/etc/hadoop/core-site.xml
+vim /opt/hadoop-3.1.1/etc/hadoop/hdfs-site.xml
+vim /opt/hadoop-3.1.1/etc/hadoop/mapred-site.xml
+vim /opt/hadoop-3.1.1/etc/hadoop/yarn-site.xml
+vim /opt/hadoop-3.1.1/etc/hadoop/workers
+vim /etc/hosts
+
+(4) 建立執行檔
+vim /opt/bin/hls
+vim /opt/bin/jpslog.sh
+vim /opt/bin/starthdfs
+vim /opt/bin/startyarn
+vim /opt/bin/startspkb
+
+(4) 建立hdfs檔案
+sudo -s
+/opt/hadoop-3.1.1/bin/hdfs dfs -chmod -R 777 /
+/opt/hadoop-3.1.1/bin/hdfs dfs -mkdir -p /tmp
+/opt/hadoop-3.1.1/bin/hdfs dfs -chmod -R 777 /tmp
+/opt/hadoop-3.1.1/bin/hdfs dfs -mkdir -p /tmp/spark-events
+/opt/hadoop-3.1.1/bin/hdfs dfs -chmod -R 777 /tmp/spark-events
+/opt/hadoop-3.1.1/bin/hdfs dfs -mkdir -p /user
+/opt/hadoop-3.1.1/bin/hdfs dfs -chmod -R 777 /user
+/opt/hadoop-3.1.1/bin/hdfs dfs -mkdir -p /user/tibame
+/opt/hadoop-3.1.1/bin/hdfs dfs -chmod -R 777 /user/tibame
+/opt/hadoop-3.1.1/bin/hdfs dfs -mkdir -p /dataset
+/opt/hadoop-3.1.1/bin/hdfs dfs -chmod -R 777 /dataset
+exit
+

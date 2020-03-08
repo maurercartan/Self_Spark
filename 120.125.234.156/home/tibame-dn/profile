@@ -1,0 +1,56 @@
+#!/bin/bash
+adminuser=root
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+export HADOOP_HOME=/opt/hadoop-3.1.1
+export HADOOP_LOG_DIR=/tmp
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+export LD_LIBRARY_PATH=$HADOOP_HOME/lib/native
+export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
+export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib/native"
+export HADOOP_USER_CLASSPATH_FIRST=true
+# [ -z $HADOOP_USER_NAME ] && declare -r HADOOP_USER_NAME=$USER
+
+# JobHistory log file path, 會自動產生目錄
+export HADOOP_MAPRED_LOG_DIR=~/jhslog
+
+export YARN_HOME=$HADOOP_HOME
+export HADOOP_YARN_HOME=$HADOOP_HOME
+export YARN_LOG_DIR=/tmp
+
+export PIG_HOME=/opt/pig-0.17.0
+export PIG_HEAPSIZE=512
+export HIVE_HOME=/opt/apache-hive-3.1.0-bin
+
+export PATH=/opt/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$PIG_HOME/bin:$HIVE_HOME/bin
+
+#export FLUME_HOME=/opt/apache-flume-1.8.0-bin
+#export FLUME_CONF_DIR=$FLUME_HOME/conf
+#export PATH=$PATH:$FLUME_HOME/bin
+
+export HBASE_HOME=/opt/hbase-2.1.0
+export SPARK_HOME=/opt/spark-2.3.1-bin-hadoop2.7
+export SPARK_CONF_DIR=/opt/spark-2.3.1-bin-hadoop2.7/conf
+export PATH=$SPARK_HOME/bin:$SPARK_HOME/sbin:$HBASE_HOME/bin:$PATH
+export ANACONDA_ROOT=/opt/anaconda3
+export PATH=$ANACONDA_ROOT/bin:$PATH
+
+if [ "$USER" != "" ]; then
+
+   if [ ! -d metastore_db ]; then
+      echo -n "build derby database ..."
+      schematool -initSchema -dbType derby &>/dev/null
+      if [ "$?" == "0" ]; then
+         echo " ok"
+         echo "set hive.cli.print.current.db=true;" > .hiverc
+         echo "set hive.metastore.warehouse.dir=/user/$USER/hive;" >> .hiverc
+         echo "set hive.exec.scratchdir=/user/$USER/tmp;" >> .hiverc
+      fi
+   fi
+
+   if [ -f /opt/bin/dkc.proxy ]; then
+      source /opt/bin/dkc.proxy
+   fi
+   alias nano='nano -Ynone'
+   alias dir='ls -alh'
+fi

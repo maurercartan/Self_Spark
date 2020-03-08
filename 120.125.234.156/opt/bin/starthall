@@ -1,0 +1,10 @@
+#!/bin/bash
+mapred --daemon stop historyserver
+yarn --daemon stop resourcemanager
+hdfs --daemon stop secondarynamenode
+hdfs --daemon stop namenode
+
+hdfs --daemon start namenode
+hdfs --daemon start secondarynamenode
+yarn --daemon start resourcemanager
+mapred --daemon start historyserver

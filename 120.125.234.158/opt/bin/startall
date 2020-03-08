@@ -1,0 +1,8 @@
+#!/bin/bash
+stop-slave.sh
+yarn --daemon stop nodemanager
+hdfs --daemon stop datanode
+
+hdfs --daemon start datanode
+yarn --daemon start nodemanager
+start-slave.sh "spark://spkm:7077"

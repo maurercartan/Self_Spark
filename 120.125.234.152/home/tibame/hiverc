@@ -1,0 +1,3 @@
+set hive.cli.print.current.db=true;
+set hive.metastore.warehouse.dir=/user/tibame/hive;
+set hive.exec.scratchdir=/user/tibame-dn/tmp;

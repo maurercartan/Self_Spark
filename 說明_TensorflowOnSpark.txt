@@ -1,0 +1,81 @@
+安裝TensorflowOnSpark
+參考資料: 
+https://github.com/yahoo/TensorFlowOnSpark
+https://www.itread01.com/content/1541039071.html
+https://cloud.tencent.com/developer/article/1006361
+==========================================
+git clone https://github.com/yahoo/TensorFlowOnSpark.git
+pip install pydoop
+pip install tensorflow==2.1.0
+==========================================
+(安裝git)
+sudo apt install git
+
+(建立python虛擬環境 py35)+(安裝pydoop)
+conda create -n py35 -c ijstokes python=3.5 pydoop
+
+(安裝tensorflow)
+cd ~/.conda/envs/py35/bin
+./pip install tensorflow==2.1.0
+./pip install tensorflow-datasets
+
+(安裝jupyter)
+./pip install jupyter
+
+(更新pip)
+./pip install --upgrade pip
+
+==========================================
+ssh tibame@120.125.234.152 --> 密碼: CKDX_dfj#8818
+    sudo apt install git
+    conda create -n py35 -c ijstokes python=3.5 pydoop
+    cd ~/.conda/envs/py35/bin
+    ./pip install tensorflow==2.1.0
+    ./pip install tensorflow-datasets
+    ./pip install jupyter
+    ./pip install --upgrade pip
+
+    cd /opt
+    git clone --recurse-submodules https://github.com/yahoo/TensorFlowOnSpark.git
+    vim ~/.profile
+        +--------------------------------
+        ANACONDA_ROOT=~/.conda/envs/py35
+        export TFoS_HOME=/opt/TensorFlowOnSpark
+        +--------------------------------
+    source ~/.profile
+    vim /opt/bin/startpython
+        +--------------------------------
+        export MASTER=spark://spkm:7077
+        $SPARK_HOME/bin/spark-submit --master $MASTER --conf spark.ui.port=4048 --verbose \
+        $TFoS_HOME/examples/mnist/mnist_data_setup.py --output examples/mnist/csv
+        +--------------------------------
+    /opt/bin/startpython
+    
+ssh tibame-dn@120.125.234.156 --> 密碼: datanode02
+    conda create -n py35 -c ijstokes python=3.5 pydoop
+    cd ~/.conda/envs/py35/bin
+    ./pip install tensorflow==2.1.0
+    ./pip install tensorflow-datasets
+    ./pip install jupyter
+    ./pip install --upgrade pip
+    vim ~/.profile
+        +--------------------------------
+        ANACONDA_ROOT=~/.conda/envs/py35
+        +--------------------------------
+    source ~/.profile
+    vim /opt/bin/startspkb 
+        +--------------------------------
+        hdfs --daemon stop datanode
+        yarn --daemon stop nodemanager
+        stop-slave.sh
+
+        export MASTER=spark://spkm:7077
+        export SPARK_WORKER_INSTANCES=1
+        export CORES_PER_WORKER=1
+        export TOTAL_CORES=1
+
+        hdfs --daemon start datanode
+        yarn --daemon start nodemanager
+        $SPARK_HOME/sbin/start-slave.sh -c $CORES_PER_WORKER -m 3G $MASTER
+        +--------------------------------
+    /opt/bin/startspkb 

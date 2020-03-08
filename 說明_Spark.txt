@@ -1,0 +1,567 @@
+參考資料
+https://blog.csdn.net/qq_32635069/article/details/80859790
+https://blog.csdn.net/poem_2010/article/details/86007627
+==========================
+TeamView
+ID: 1731281077
+密碼: ProjectMuse
+放大鏡
+==========================
+Ubuntu(ssh tibame@120.125.234.152) --> NameNode
+帳號: root
+密碼: SHJ#fkeits_88
+
+帳號: tibame
+密碼: CKDX_dfj#8818
+==========================
+Ubuntu(ssh tibame-dn@120.125.234.158) --> DataNode
+帳號: tibame-dn
+密碼: datanode01
+==========================
+Ubuntu(ssh tibame-dn@120.125.234.156) --> DataNode
+帳號: tibame-dn
+密碼: datanode02
+
+**************************** 事前準備 ****************************
+(1) 安裝ssh
+sudo apt-get install ssh
+/etc/init.d/ssh restart
+
+(2) 安裝ngrok <https://dashboard.ngrok.com/auth>
+    帳號: maurercartan@gmail.com
+    密碼: hsuhUH_USh_j83
+sudo snap install ngrok
+ngrok authtoken 1YPyetDw261trsHcKS5alDZX4UY_7RY17XLjrvqPQeV8nj1aM
+ngrok tcp 22
+**************************** master主機 ****************************
+
+**************************** NameNode主機 ****************************
+(1) 登入
+ssh tibame@120.125.234.152
+<ssh tibame@nn>
+(2) 安裝套件
+sudo apt-get update
+sudo apt-get upgrade
+sudo apt-get dist-upgrade
+sudo apt-get install vim
+sudo wget http://ftp.twaren.net/Unix/Web/apache/hadoop/common/hadoop-3.1.1/hadoop-3.1.1.tar.gz
+sudo wget https://archive.apache.org/dist/hive/hive-3.1.0/apache-hive-3.1.0-bin.tar.gz
+sudo wget http://ftp.twaren.net/Unix/Web/apache/pig/pig-0.17.0/pig-0.17.0.tar.gz
+sudo wget https://archive.apache.org/dist/spark/spark-2.3.1/spark-2.3.1-bin-hadoop2.7.tgz
+sudo tar xvfz hadoop-3.1.1.tar.gz -C /opt
+sudo tar xvfz apache-hive-3.1.0-bin.tar.gz -C /opt
+sudo tar xvfz pig-0.17.0.tar.gz -C /opt
+sudo tar xvfz spark-2.3.1-bin-hadoop2.7.tgz -C /opt
+sudo rm *.tar.gz
+sudo mkdir /opt/dataset
+sudo mkdir /opt/bin
+
+sudo wget https://repo.continuum.io/archive/Anaconda3-4.4.0-Linux-x86_64.sh
+sudo bash Anaconda3-4.4.0-Linux-x86_64.sh
+    yes
+    /opt/anaconda3
+    yes
+sudo rm Anaconda3-4.4.0-Linux-x86_64.sh
+
+(3) 設置環境變數
+sudo vim ~/.profile
+    +----------------------------------------------
+    #!/bin/bash
+    adminuser=root
+    export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+    export HADOOP_HOME=/opt/hadoop-3.1.1
+    export HADOOP_LOG_DIR=/tmp
+    export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+    export LD_LIBRARY_PATH=$HADOOP_HOME/lib/native
+    export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
+    export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib/native"
+    export HADOOP_USER_CLASSPATH_FIRST=true
+    # [ -z $HADOOP_USER_NAME ] && declare -r HADOOP_USER_NAME=$USER
+
+    # JobHistory log file path, 會自動產生目錄
+    export HADOOP_MAPRED_LOG_DIR=~/jhslog
+
+    export YARN_HOME=$HADOOP_HOME
+    export HADOOP_YARN_HOME=$HADOOP_HOME
+    export YARN_LOG_DIR=/tmp
+
+    export PIG_HOME=/opt/pig-0.17.0
+    export PIG_HEAPSIZE=512
+    export HIVE_HOME=/opt/apache-hive-3.1.0-bin
+
+    export PATH=/opt/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$PIG_HOME/bin:$HIVE_HOME/bin
+
+    #export FLUME_HOME=/opt/apache-flume-1.8.0-bin
+    #export FLUME_CONF_DIR=$FLUME_HOME/conf
+    #export PATH=$PATH:$FLUME_HOME/bin
+
+    export HBASE_HOME=/opt/hbase-2.1.0
+    export SPARK_HOME=/opt/spark-2.3.1-bin-hadoop2.7
+    export SPARK_CONF_DIR=/opt/spark-2.3.1-bin-hadoop2.7/conf
+    export PATH=$SPARK_HOME/bin:$SPARK_HOME/sbin:$HBASE_HOME/bin:$PATH
+    export ANACONDA_ROOT=/opt/anaconda3
+    export PATH=$ANACONDA_ROOT/bin:$PATH
+
+    if [ "$USER" != "" ]; then
+
+       if [ ! -d metastore_db ]; then
+          echo -n "build derby database ..."
+          schematool -initSchema -dbType derby &>/dev/null
+          if [ "$?" == "0" ]; then
+             echo " ok"
+             echo "set hive.cli.print.current.db=true;" > .hiverc
+             echo "set hive.metastore.warehouse.dir=/user/$USER/hive;" >> .hiverc
+             echo "set hive.exec.scratchdir=/user/$USER/tmp;" >> .hiverc
+          fi
+       fi
+
+       if [ -f /opt/bin/dkc.proxy ]; then
+          source /opt/bin/dkc.proxy
+       fi
+       alias nano='nano -Ynone'
+       alias dir='ls -alh'
+    fi
+
+    +----------------------------------------------
+source ~/.profile
+echo $PATH
+
+vim /opt/hadoop-3.1.1/etc/hadoop/hadoop-env.sh
+    +----------------------------------------------
+    export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+    +----------------------------------------------
+
+vim /opt/hadoop-3.1.1/sbin/start-dfs.sh
+    +----------------------------------------------
+    export HDFS_NAMENODE_USER=root
+    export HDFS_DATANODE_USER=root
+    export HDFS_SECONDARYNAMENODE_USER=root
+    export YARN_RESOURCEMANAGER_USER=root
+    export YARN_NODEMANAGER_USER=root
+    export HADOOP_SECURE_DN_USER=hdfs
+    +----------------------------------------------
+    
+vim /opt/hadoop-3.1.1/sbin/start-yarn.sh
+    +----------------------------------------------
+    YARN_RESOURCEMANAGER_USER=root
+    HADOOP_SECURE_DN_USER=yarn
+    YARN_NODEMANAGER_USER=root
+    +----------------------------------------------
+    
+ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+
+    
+vim /opt/hadoop-3.1.1/etc/hadoop/core-site.xml
+    +----------------------------------------------
+    <configuration>
+        <property>
+            <name>fs.defaultFS</name>
+            <value>hdfs://nn:8020</value>
+        </property>
+        <property>
+            <name>fs.default.name</name>
+            <value>hdfs://nn:8020</value>
+        </property>
+        <property>
+            <name>io.compression.codecs</name>
+            <value>org.apache.hadoop.io.compress.BZip2Codec,org.apache.hadoop.io.compress.GzipCodec,org.apache.hadoop.io.compress.SnappyCodec</value>
+        </property>
+    </configuration>
+    +----------------------------------------------
+
+vim /opt/hadoop-3.1.1/etc/hadoop/hdfs-site.xml
+    +----------------------------------------------
+    <configuration>
+        <property>
+            <name>dfs.replication</name>
+            <value>1</value>
+        </property>
+        <property>
+            <name>dfs.namenode.name.dir</name>
+            <value>file:/home/tibame-dn/nn</value>
+        </property>
+        <property>
+            <name>dfs.datanode.data.dir</name>
+            <value>file:/home/tibame-dn/dn</value>
+        </property>
+        <property>
+            <name>dfs.permissions.superusergroup</name>
+            <value>root</value>
+        </property>
+    </configuration>
+    +----------------------------------------------
+    
+vim /opt/hadoop-3.1.1/etc/hadoop/mapred-site.xml
+    +----------------------------------------------
+    <configuration>
+       <property>
+         <name>mapreduce.framework.name</name>
+         <value>yarn</value>
+         <!--<value>yarn-tez</value>-->
+       </property>
+       <property>
+          <name>mapreduce.application.classpath</name>
+          <value>/opt/hadoop-3.1.1/share/hadoop/mapreduce/*,/opt/hadoop-3.1.1/share/hadoop/mapreduce/lib/*,/opt/hadoop-3.1.1/share/hadoop/common/*,/opt/hadoop-3.1.1/share/hadoop/common/lib/*,/opt/hadoop-3.1.1/share/hadoop/yarn/*,/opt/hadoop-3.1.1/share/hadoop/yarn/lib/*,/opt/hadoop-3.1.1/share/hadoop/hdfs/*,/opt/hadoop-3.1.1/share/hadoop/hdfs/lib/*</value>
+       </property>
+
+       <property>
+          <name>yarn.app.mapreduce.am.resource.mb</name>
+          <value>300</value>
+       </property>
+       <property>
+          <name>yarn.app.mapreduce.am.command-opts</name>
+          <value>-Xmx224m</value>
+       </property>
+
+       <property>
+          <name>mapreduce.reduce.memory.mb</name>
+          <value>300</value>
+       </property>
+       <property>
+          <name>mapreduce.reduce.java.opts</name>
+          <value>-Xmx224m</value>
+       </property>
+       <property>
+          <name>mapreduce.map.memory.mb</name>
+          <value>300</value>
+       </property>
+       <property>
+         <name>mapreduce.job.running.map.limit</name>
+         <value>1</value>
+       </property>
+    </configuration>
+    +----------------------------------------------
+
+vim /opt/hadoop-3.1.1/etc/hadoop/yarn-site.xml
+    +----------------------------------------------
+    <configuration>
+        <property>
+            <name>yarn.nodemanager.aux-services</name>
+            <value>mapreduce_shuffle</value>
+        </property>
+        <property>
+            <name>yarn.nodemanager.aux-services.mapreduce.shuffle.class</name>
+            <value>org.apache.hadoop.mapred.ShuffleHandler</value>
+        </property>
+        <property>
+            <name>yarn.resourcemanager.webapp.address</name>
+            <value>rm:8088</value>
+        </property>
+        <property>
+            <name>yarn.resourcemanager.hostname</name>
+            <value>rm</value>
+        </property>
+        <property>
+            <name>yarn.nodemanager.local-dirs</name>
+            <value>/home/tibame-dn/yarn</value>
+        </property>
+        <property>
+            <name>mapreduce.jobhistory.address</name>
+            <value>rm:10020</value>
+        </property>
+        <property>
+            <name>yarn.nodemanager.vmem-check-enabled</name>
+            <value>false</value>
+      </property>
+      <property>
+        <name>yarn.nodemanager.pmem-check-enabled</name>
+        <value>false</value>
+      </property>
+
+      <property>
+        <name>yarn.nodemanager.resource.memory-mb</name>
+        <value>2048</value>
+      </property>
+      <property>
+        <name>yarn.nodemanager.resource.cpu-vcores</name>
+        <value>2</value>
+      </property>
+      <property>
+        <name>yarn.scheduler.minimum-allocation-mb</name>
+        <value>300</value>
+      </property>
+      <property>
+        <name>yarn.scheduler.maximum-allocation-mb</name>
+        <value>300</value>
+      </property>
+      <property>
+        <name>yarn.scheduler.minimum-allocation-vcores</name>
+        <value>1</value>
+      </property>
+      <property>
+        <name>yarn.scheduler.maximum-allocation-vcores</name>
+        <value>1</value>
+      </property>
+
+      <property>
+        <name>yarn.resourcemanager.scheduler.class</name>
+        <value>org.apache.hadoop.yarn.server.resourcemanager.scheduler.fair.FairScheduler</value>
+      </property>
+    </configuration>
+    +----------------------------------------------
+    
+vim /opt/hadoop-3.1.1/etc/hadoop/workers
+    +----------------------------------------------
+    dn
+    +----------------------------------------------
+    
+cp /opt/spark-2.3.1-bin-hadoop2.7/conf/spark-env.sh.template /opt/spark-2.3.1-bin-hadoop2.7/conf/spark-env.sh
+vim /opt/spark-2.3.1-bin-hadoop2.7/conf/spark-env.sh
+    +----------------------------------------------
+    # Cluster Mode
+    export SPARK_MASTER_HOST=spkm
+    export SPARK_LOG_DIR=/tmp
+
+    # Master and Worker Daemon Heap Size
+    export SPARK_DAEMON_MEMORY=512m
+    export SPARK_WORKER_MEMORY=2048m
+    export SPARK_WORKER_DIR=/home/tibame-dn/worker
+    export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+    +----------------------------------------------
+
+
+sudo -s
+/opt/hadoop-3.1.1/bin/hdfs dfs -chmod -R 777 /
+/opt/hadoop-3.1.1/bin/hdfs dfs -chmod -R 777 /tmp
+/opt/hadoop-3.1.1/bin/hdfs dfs -mkdir -p /tmp/spark-events
+/opt/hadoop-3.1.1/bin/hdfs dfs -chmod -R 777 /tmp/spark-events
+
+cp /opt/spark-2.3.1-bin-hadoop2.7/conf/spark-defaults.conf.template /opt/spark-2.3.1-bin-hadoop2.7/conf/spark-defaults.conf
+vim /opt/spark-2.3.1-bin-hadoop2.7/conf/spark-defaults.conf
+    +----------------------------------------------
+    #Turns on logging for applications submitted from this machine  
+    #spark.authenticate              false 
+    spark.eventLog.enabled          true  
+    spark.eventLog.dir                 hdfs://nn:8020/tmp/spark-events  
+    spark.history.fs.logDirectory   hdfs://nn:8020/tmp/spark-events
+    +----------------------------------------------
+    
+vim ~/.bashrc
+    +----------------------------------------------
+    export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+    export PATH=/opt/anaconda3/bin:JAVA_HOME:$PATH
+    +----------------------------------------------
+    
+sudo chmod 777 /etc/hosts
+vim /etc/hosts
+    +----------------------
+    120.125.234.152 admin
+    120.125.234.152 spkm
+    120.125.234.158 rm
+    120.125.234.158 nn
+    120.125.234.156 dn
+    +----------------------
+
+(4) 
+hdfs初始化
+ssh tibame-dn@120.125.234.158 --> 密碼: datanode01
+hdfs namenode -format -clusterID cute
+
+hive初始化
+ssh tibame@120.125.234.152 --> 密碼: CKDX_dfj#8818
+schematool -initSchema -dbType derby
+(5) 啟動 hdfs + yarn + spark
+寫法1:
+    SparkManager
+        start-master.sh
+        start-history-server.sh
+        
+    ResourceManager
+        yarn --daemon start resourcemanager
+        mapred --daemon start historyserver
+
+    NameNode
+        hdfs --daemon start namenode
+        hdfs --daemon start secondarynamenode
+        
+    DataNode
+        hdfs --daemon start datanode
+        yarn --daemon start nodemanager
+        start-slave.sh "spark://spkm:7077"
+
+寫法2:
+    SparkManager
+        ssh tibame@spkm start-master.sh
+        ssh tibame@spkm start-history-server.sh
+        
+    ResourceManager
+        ssh tibame-dn@rm yarn --daemon start resourcemanager
+        ssh tibame-dn@rm mapred --daemon start historyserver
+
+    NameNode
+        ssh tibame-dn@nn hdfs --daemon start namenode
+        ssh tibame-dn@nn hdfs --daemon start secondarynamenode
+        
+    DataNode
+        ssh tibame-dn@dn hdfs --daemon start datanode
+        ssh tibame-dn@dn yarn --daemon start nodemanager
+        /opt/pig-0.17.0/bin dn
+        ssh tibame-dn@dn start-slave.sh "spark://spkm:7077"
+
+寫法3(啟動)
+ssh tibame@120.125.234.152 --> 密碼: CKDX_dfj#8818
+start-master.sh
+start-history-server.sh
+
+ssh tibame-dn@120.125.234.158 --> 密碼: datanode01
+hdfs --daemon start namenode
+hdfs --daemon start secondarynamenode
+yarn --daemon start resourcemanager
+mapred --daemon start historyserver
+
+ssh tibame-dn@120.125.234.156 --> 密碼: datanode02
+hdfs --daemon start datanode
+yarn --daemon start nodemanager
+start-slave.sh "spark://spkm:7077"
+
+寫法3(關閉)
+ssh tibame@120.125.234.152 --> 密碼: CKDX_dfj#8818
+stop-master.sh
+stop-history-server.sh
+
+ssh tibame-dn@120.125.234.158 --> 密碼: datanode01
+hdfs --daemon stop namenode
+hdfs --daemon stop secondarynamenode
+yarn --daemon stop resourcemanager
+mapred --daemon stop historyserver
+
+ssh tibame-dn@120.125.234.156 --> 密碼: datanode02
+hdfs --daemon stop datanode
+yarn --daemon stop nodemanager
+stop-slave.sh
+
+(6) 查看(master主機)執行的程式(確認hadoop是否有啟動,有NameNode與SecondaryNameNode,代表成功)
+jps
+
+NameNode
+    ssh tibame-dn@nn jps
+    
+DataNode
+    ssh tibame-dn@dn jps
+
+(7) 查看(hdfs:/)
+hadoop dfs -ls -d /
+(8) 建立目錄(hdfs:/tmp)
+hadoop dfs -mkdir /tmp
+(10) 修改設定檔(設定worker主機)
+mv $SPARK_HOME/conf/slaves.template $SPARK_HOME/conf/slaves
+vim $SPARK_HOME/conf/slaves
+    +------------
+    | dn
+    +------------
+(11) 啟動spark
+$SPARK_HOME/sbin/start-all.sh
+(12) 查看(master主機)執行的程式(確認spark是否有啟動,有Master,代表成功)
+jps
+(13) 查看(worker主機)執行的程式(有Worker,代表成功)
+ssh dn1 jps
+(14) Web界面(必須先打開8080port)
+瀏覽器(https://54.179.161.241:8080)
+    +-----------------------------------
+    | URL: spark://ip-172-31-9-254:7077
+    +-----------------------------------
+(15) 進入spark-shell
+spark-shell --master spark://ip-172-31-9-254:7077
+    +------------------------------
+    | sc.parallelize(1 to 100).sum
+    | exit
+    +------------------------------
+(16) 修改設定檔(進入spark-shell時的啟動訊息修改)
+mv $SPARK_HOME/conf/log4j.properties.template $SPARK_HOME/conf/log4j.properties
+vim $SPARK_HOME/conf/log4j.properties
+    +-------------------------------------
+    | log4j.rootCategory=WARN, console
+    +-------------------------------------
+(17) 再次進入spark-shell,查看顯示畫面
+spark-shell --master spark://ip-172-31-9-254:7077
+    +------------------------------
+    | exit
+    +------------------------------
+(18) 修改設定檔(修改spark-shell的預設參數)
+mv $SPARK_HOME/conf/spark-defaults.conf.template $SPARK_HOME/conf/spark-defaults.conf
+vim $SPARK_HOME/conf/spark-defaults.conf
+    +----------------------------------------------------
+    | spark.master          spark://ip-172-31-9-254:7077
+    | spark.cores.max       2
+    | spark.executor.memory 2g
+    +----------------------------------------------------
+(19) 再次進入spark-shell,可以省略參數設定
+spark-shell
+    +------------------------------
+    | exit
+    +------------------------------
+(20) 修改設定檔(將hdfs設為預設檔案系統)
+    - 1.修改設定檔
+    - 2.關閉spark
+    - 3.複製該設定檔給所有的(worker主機)
+    - 4.再次啟動spark
+    - 4.再次啟動spark
+mv $SPARK_HOME/conf/spark-env.sh.template $SPARK_HOME/conf/spark-env.sh
+vim $SPARK_HOME/conf/spark-env.sh
+    +------------------------------
+    | export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+    +------------------------------
+$SPARK_HOME/sbin/stop-all.sh
+scp $SPARK_HOME/conf/spark-env.sh dn1:$SPARK_HOME/conf/spark-env.sh
+scp $SPARK_HOME/conf/spark-env.sh dn2:$SPARK_HOME/conf/spark-env.sh
+$SPARK_HOME/sbin/start-all.sh
+
+
+elinks -dump 1 -dump-width 120 http://spkmb:8080
+spark-shell --master spark://spkmb:7077 --total-executor-cores 1 --executor-cores 1
+    sc.getConf.getAll.foreach(println)
+:quit
+spark 
+**************************** Pig ****************************
+cd ~
+wget https://raw.githubusercontent.com/rohitsden/pig-tutorial/master/movies_data.csv
+
+pig
+    ls /;
+    mkdir /dataset;
+    copyFromLocal movies_data.csv /dataset;
+    ls /dataset;
+    movies = load '/dataset/movies_data.csv' using PigStorage(',');
+    a = filter movies by (float)$3>2.0;
+    dump a;
+    b = filter a by (int)$4>3600;
+    store b into '/dataset/mymovies.csv' using pigstorage(',');
+    ls /dataset/mymovies.csv
+    cat /dataset/mymovies.csv;
+quit
+**************************** Hive ****************************
+vim ~/.hiverc
+    +------------------------------
+    set hive.cli.print.current.db=true;
+    set hive.metastore.warehouse.dir=/user/root/hive;
+    set hive.exec.scratchdir=/user/root/tmp;
+    +------------------------------
+
+hive -S
+    create table dummy(value string);
+    dfs -ls /user/tibame-ds/hive;
+    !tree -L 2 metastore_db;
+    show tables;
+    load data local inpath '/etc/passwd' into table dummy;
+    dfs -ls /user/tibame-ds/hive/dummy;
+    select * from dummy;
+    insert into dummy values('abc');
+    dfs -ls /user/tibame-ds/hive/dummy;
+    drop table dummy;
+    dfs -ls /user/tibame-ds/hive/dummy;
+quit;
+**************************** Spark-shell ****************************
+pyspark --master spark://spkm:7077
+    from random import *
+    def sample(p):
+        x,y = random(),random()
+        return 1 if x*x+y*y<1 else 0
+    count = sc.parallelize(range(0,1000)).map(sample).reduce(lambda a,b:a+b)
+    print("PI us roughly %f",(4.0*count/1000))
+quit()
+**************************** jupyter-notebook ****************************
+startjupyter
+http://120.125.234.152:8888/?token=3b2f0cc23f510cd33d8050007fda487f3842cbad50ca6051
+
